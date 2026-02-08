@@ -1,0 +1,26 @@
+
+name: rsa_identification_scanner_example
+description: Demonstrates how to use the rsa_identification_scanner plugin.
+
+publish_to: 'none' # Remove this line if you intend to publish this package.
+
+environment:
+  sdk: '>=3.10.8 <4.0.0'
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  rsa_identification_scanner:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+dependency_overrides:
+  mobile_scanner: ^7.1.4 # Ensure this matches the version in rsa_identification_scanner/pubspec.yaml
+
+flutter:
+  uses-material-design: true
