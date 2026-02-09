@@ -15,6 +15,8 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String? _scannedValue;
+  String? _previousScannedValue = '';
+  RsaIdentificationScanner rsaScanner = RsaIdentificationScanner();
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +29,7 @@ class _MyAppState extends State<MyApp> {
               flex: 4,
               child: RsaScannerView(
                 formats: const [
-                  BarcodeFormat.pdf417,
+                  BarcodeFormat.all,
                 ], // Example: Only scan QR codes
                 torchEnabled: false,
                 autoZoom: true,
@@ -37,10 +39,25 @@ class _MyAppState extends State<MyApp> {
                     if (barcode.rawValue != null) {
                       setState(() {
                         _scannedValue = barcode.rawValue;
+                        if (_scannedValue != _previousScannedValue) {
+                          _previousScannedValue = _scannedValue;
+                        } else {
+                          // Duplicate scan, ignore
+                          return;
+                        }
+                        // Check if new RSA ID format
+                        if (rsaScanner.isRSAIdNewFormat(_scannedValue!)) {
+                          // Process RSA ID
+                          final rsaData = rsaScanner.parseRSAIdNewFormat(
+                            _scannedValue!,
+                          );
+                          print('Surname: ${rsaData?.surname}');
+                          print('First Names: ${rsaData?.firstNames}');
+                        }
                       });
                       // You might want to navigate away or stop the scanner here
                       // For simplicity, we'll just display the value.
-                      print('Scanned: ${barcode.rawValue}');
+                      // print('Scanned: ${barcode.rawValue}');
                     }
                   }
                 },

@@ -3,10 +3,54 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+typedef NewIdFormatRecord = ({
+  String surname,
+  String firstNames,
+  String gender,
+  String countryCode,
+  String idNumber,
+  String dateOfBirth,
+  String nationality,
+  String idType,
+  String issueDate,
+  String issuerCode,
+  String personalNumber,
+  String checkDigit,
+});
+
 /// A Calculator.
 class RsaIdentificationScanner {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
+  bool isSupported() {
+    return Platform.isAndroid || Platform.isIOS || kIsWeb;
+  }
+
+  bool isRSAIdNewFormat(String data) {
+    final parts = data.split('|');
+    if (parts.length <= 12) return false; // Not enough parts for new format
+    return true;
+  }
+
+  NewIdFormatRecord? parseRSAIdNewFormat(String data) {
+    if (!isRSAIdNewFormat(data)) {
+      return null;
+    }
+
+    final parts = data.split('|');
+    return (
+      surname: parts[0],
+      firstNames: parts[1],
+      gender: parts[2],
+      countryCode: parts[3],
+      idNumber: parts[4],
+      dateOfBirth: parts[5],
+      nationality: parts[6],
+      idType: parts[7],
+      issueDate: parts[8],
+      issuerCode: parts[9],
+      personalNumber: parts[10],
+      checkDigit: parts[11],
+    );
+  }
 
   String getPlatform() {
     return Platform.isAndroid
