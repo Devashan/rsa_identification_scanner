@@ -1,39 +1,107 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# RSA Identification Scanner
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+`rsa_identification_scanner` is a Flutter package for scanning South African RSA ID barcode payloads and parsing the new pipe-delimited format into a typed record.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+It provides:
+- `RsaScannerView`: a ready-to-use camera scanner widget built on `mobile_scanner`.
+- `RsaIdentificationScanner`: helper methods to detect and parse RSA ID barcode content.
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+## Installation
 
-## Features
+Add the package to your app:
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
-
-## Usage
-
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
-```dart
-const like = 'sample';
+```yaml
+dependencies:
+  rsa_identification_scanner: ^0.0.1
 ```
 
-## Additional information
+Then fetch dependencies:
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+```bash
+flutter pub get
+```
+
+## Setup
+
+### 1) Import the package
+
+```dart
+import 'package:rsa_identification_scanner/rsa_identification_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+```
+
+### 2) Configure platform permissions
+
+`RsaScannerView` uses the device camera via `mobile_scanner`, so camera permissions are required.
+
+- **Android**: ensure camera permission is available in your app manifest:
+
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+```
+
+- **iOS**: add `NSCameraUsageDescription` to `Info.plist` with a user-facing explanation.
+
+## Scanner usage
+
+```dart
+class ScannerScreen extends StatefulWidget {
+  const ScannerScreen({super.key});
+
+  @override
+  State<ScannerScreen> createState() => _ScannerScreenState();
+}
+
+class _ScannerScreenState extends State<ScannerScreen> {
+  final scanner = RsaIdentificationScanner();
+  String? scanned;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Scan RSA ID')),
+      body: RsaScannerView(
+        formats: const [BarcodeFormat.all],
+        autoZoom: true,
+        onScanResult: (capture) {
+          if (capture.barcodes.isEmpty) return;
+          final code = capture.barcodes.first.rawValue;
+          if (code == null) return;
+
+          setState(() => scanned = code);
+
+          if (scanner.isRSAIdNewFormat(code)) {
+            final parsed = scanner.parseRSAIdNewFormat(code);
+            debugPrint('ID Number: ${parsed?.idNumber}');
+          }
+        },
+      ),
+    );
+  }
+}
+```
+
+## RSA parse example (`parseRSAIdNewFormat`)
+
+```dart
+final scanner = RsaIdentificationScanner();
+
+const sample =
+    'DOE|JANE ANN|F|ZAF|9001014800082|1990-01-01|RSA|ID|2022-05-11|DHA|1234567890|7|';
+
+final parsed = scanner.parseRSAIdNewFormat(sample);
+
+if (parsed != null) {
+  print(parsed.surname);      // DOE
+  print(parsed.firstNames);   // JANE ANN
+  print(parsed.idNumber);     // 9001014800082
+  print(parsed.dateOfBirth);  // 1990-01-01
+}
+```
+
+## Known limitations
+
+- `isRSAIdNewFormat` currently validates only by checking for a minimum number of `|`-separated fields.
+- `parseRSAIdNewFormat` does not verify check digits or cryptographic authenticity; it only maps fields by index.
+- `RsaIdentificationScanner.isSupported()` returns support for Android, iOS, and web, but camera behavior depends on platform/browser/device capabilities.
+- Duplicate barcode filtering and scan throttling are app-level concerns and should be handled in your `onScanResult` callback.

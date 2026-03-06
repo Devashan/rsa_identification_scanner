@@ -1,7 +1,6 @@
 name: rsa_identification_scanner
-description: "A new Flutter package project."
+description: "Flutter widget and helpers for scanning and parsing South African RSA ID barcode data."
 version: 0.0.1
-homepage:
 
 environment:
   sdk: ^3.10.8
