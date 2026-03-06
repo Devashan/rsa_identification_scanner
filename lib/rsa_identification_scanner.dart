@@ -25,8 +25,10 @@ class RsaIdentificationScanner {
   }
 
   bool isRSAIdNewFormat(String data) {
+    if (data.trim().isEmpty) return false;
+
     final parts = data.split('|');
-    if (parts.length <= 12) return false; // Not enough parts for new format
+    if (parts.length < 12) return false; // Not enough parts for new format
     return true;
   }
 
