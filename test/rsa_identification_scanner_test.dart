@@ -1,6 +1,36 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:rsa_identification_scanner/rsa_identification_scanner.dart';
+import 'package:rsa_identification_scanner/src/platform/platform_info.dart';
+
+class _FakePlatformInfo implements PlatformInfo {
+  const _FakePlatformInfo({
+    this.isWeb = false,
+    this.isAndroid = false,
+    this.isIOS = false,
+    this.isMacOS = false,
+    this.isWindows = false,
+    this.isLinux = false,
+  });
+
+  @override
+  final bool isWeb;
+
+  @override
+  final bool isAndroid;
+
+  @override
+  final bool isIOS;
+
+  @override
+  final bool isMacOS;
+
+  @override
+  final bool isWindows;
+
+  @override
+  final bool isLinux;
+}
 
 void main() {
   final scanner = RsaIdentificationScanner();
