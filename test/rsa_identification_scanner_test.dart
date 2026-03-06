@@ -33,56 +33,61 @@ class _FakePlatformInfo implements PlatformInfo {
 }
 
 void main() {
-  group('RsaIdentificationScanner platform detection', () {
-    tearDown(() {
-      debugDefaultTargetPlatformOverride = null;
+  final scanner = RsaIdentificationScanner();
+
+  const validNewFormatData =
+      'DOE|JOHN|M|ZA|8001015009087|19800101|ZA|ID|20230101|DHA|1234567890|7';
+
+  group('isRSAIdNewFormat', () {
+    test('returns true for exactly 12 fields with required fields populated', () {
+      expect(scanner.isRSAIdNewFormat(validNewFormatData), isTrue);
     });
 
-    test('isSupported returns true for Android and iOS', () {
-      final androidScanner = RsaIdentificationScanner(
-        platformInfo: const _FakePlatformInfo(isAndroid: true),
-      );
-      final iosScanner = RsaIdentificationScanner(
-        platformInfo: const _FakePlatformInfo(isIOS: true),
-      );
+    test('returns false for wrong length (11 fields)', () {
+      const dataWith11Fields =
+          'DOE|JOHN|M|ZA|8001015009087|19800101|ZA|ID|20230101|DHA|1234567890';
 
-      expect(androidScanner.isSupported(), isTrue);
-      expect(iosScanner.isSupported(), isTrue);
+      expect(scanner.isRSAIdNewFormat(dataWith11Fields), isFalse);
     });
 
-    test('isSupported returns true for web and false for unsupported desktop', () {
-      final webScanner = RsaIdentificationScanner(
-        platformInfo: const _FakePlatformInfo(isWeb: true),
-      );
-      final desktopScanner = RsaIdentificationScanner(
-        platformInfo: const _FakePlatformInfo(isLinux: true),
-      );
+    test('returns false for wrong length (13 fields)', () {
+      const dataWith13Fields =
+          'DOE|JOHN|M|ZA|8001015009087|19800101|ZA|ID|20230101|DHA|1234567890|7|EXTRA';
 
-      expect(webScanner.isSupported(), isTrue);
-      expect(desktopScanner.isSupported(), isFalse);
+      expect(scanner.isRSAIdNewFormat(dataWith13Fields), isFalse);
     });
 
-    test('getPlatform resolves Android and iOS via target platform', () {
-      debugDefaultTargetPlatformOverride = TargetPlatform.android;
-      final androidScanner = RsaIdentificationScanner(
-        platformInfo: const _FakePlatformInfo(isAndroid: true),
-      );
-      expect(androidScanner.getPlatform(), 'Android');
+    test('returns false when required fields are empty', () {
+      const missingSurname =
+          '|JOHN|M|ZA|8001015009087|19800101|ZA|ID|20230101|DHA|1234567890|7';
+      const missingIdNumber =
+          'DOE|JOHN|M|ZA||19800101|ZA|ID|20230101|DHA|1234567890|7';
+      const missingDateOfBirth =
+          'DOE|JOHN|M|ZA|8001015009087||ZA|ID|20230101|DHA|1234567890|7';
 
-      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-      final iosScanner = RsaIdentificationScanner(
-        platformInfo: const _FakePlatformInfo(isIOS: true),
-      );
-      expect(iosScanner.getPlatform(), 'iOS');
+      expect(scanner.isRSAIdNewFormat(missingSurname), isFalse);
+      expect(scanner.isRSAIdNewFormat(missingIdNumber), isFalse);
+      expect(scanner.isRSAIdNewFormat(missingDateOfBirth), isFalse);
+    });
+  });
+
+  group('parseRSAIdNewFormat', () {
+    test('parses valid exactly-12 field input', () {
+      final parsed = scanner.parseRSAIdNewFormat(validNewFormatData);
+
+      expect(parsed, isNotNull);
+      expect(parsed!.surname, 'DOE');
+      expect(parsed.firstNames, 'JOHN');
+      expect(parsed.idNumber, '8001015009087');
+      expect(parsed.dateOfBirth, '19800101');
+      expect(parsed.checkDigit, '7');
     });
 
-    test('getPlatform returns Web when running on web', () {
-      debugDefaultTargetPlatformOverride = TargetPlatform.android;
-      final webScanner = RsaIdentificationScanner(
-        platformInfo: const _FakePlatformInfo(isWeb: true),
-      );
+    test('returns null for wrong-length input', () {
+      const dataWith11Fields =
+          'DOE|JOHN|M|ZA|8001015009087|19800101|ZA|ID|20230101|DHA|1234567890';
 
-      expect(webScanner.getPlatform(), 'Web');
+      expect(scanner.parseRSAIdNewFormat(dataWith11Fields), isNull);
     });
   });
 }

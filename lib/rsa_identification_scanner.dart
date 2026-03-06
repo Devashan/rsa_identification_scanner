@@ -33,7 +33,18 @@ class RsaIdentificationScanner {
     if (data.trim().isEmpty) return false;
 
     final parts = data.split('|');
-    if (parts.length < 12) return false; // Not enough parts for new format
+
+    if (parts.length != 12) {
+      return false;
+    }
+
+    const requiredFieldIndexes = [0, 4, 5];
+    for (final index in requiredFieldIndexes) {
+      if (parts[index].trim().isEmpty) {
+        return false;
+      }
+    }
+
     return true;
   }
 
