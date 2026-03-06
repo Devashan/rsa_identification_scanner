@@ -1,7 +1,7 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+
+import 'src/platform/platform_info.dart';
 
 typedef NewIdFormatRecord = ({
   String surname,
@@ -20,8 +20,13 @@ typedef NewIdFormatRecord = ({
 
 /// A Calculator.
 class RsaIdentificationScanner {
+  RsaIdentificationScanner({PlatformInfo? platformInfo})
+    : _platformInfo = platformInfo ?? getPlatformInfo();
+
+  final PlatformInfo _platformInfo;
+
   bool isSupported() {
-    return Platform.isAndroid || Platform.isIOS || kIsWeb;
+    return _platformInfo.isAndroid || _platformInfo.isIOS || _platformInfo.isWeb;
   }
 
   bool isRSAIdNewFormat(String data) {
@@ -55,19 +60,7 @@ class RsaIdentificationScanner {
   }
 
   String getPlatform() {
-    return Platform.isAndroid
-        ? "Android"
-        : Platform.isIOS
-        ? "iOS"
-        : Platform.isMacOS
-        ? "MacOS"
-        : Platform.isWindows
-        ? "Windows"
-        : Platform.isLinux
-        ? "Linux"
-        : kIsWeb
-        ? "Web"
-        : "Unknown";
+    return describePlatform(_platformInfo);
   }
 }
 

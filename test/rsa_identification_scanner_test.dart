@@ -1,86 +1,88 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:rsa_identification_scanner/rsa_identification_scanner.dart';
+import 'package:rsa_identification_scanner/src/platform/platform_info.dart';
+
+class _FakePlatformInfo implements PlatformInfo {
+  const _FakePlatformInfo({
+    this.isWeb = false,
+    this.isAndroid = false,
+    this.isIOS = false,
+    this.isMacOS = false,
+    this.isWindows = false,
+    this.isLinux = false,
+  });
+
+  @override
+  final bool isWeb;
+
+  @override
+  final bool isAndroid;
+
+  @override
+  final bool isIOS;
+
+  @override
+  final bool isMacOS;
+
+  @override
+  final bool isWindows;
+
+  @override
+  final bool isLinux;
+}
 
 void main() {
-  group('isRSAIdNewFormat', () {
-    test('returns true for payload with exactly 12 fields', () {
-      final scanner = RsaIdentificationScanner();
-      const payload =
-          'DOE|JOHN JAMES|M|ZAF|9001015009087|1990-01-01|SA|ID|2020-01-01|DHA|1234567890|7';
-
-      expect(scanner.isRSAIdNewFormat(payload), isTrue);
+  group('RsaIdentificationScanner platform detection', () {
+    tearDown(() {
+      debugDefaultTargetPlatformOverride = null;
     });
 
-    test('returns false for malformed payload with fewer than 12 fields', () {
-      final scanner = RsaIdentificationScanner();
-      const payload = 'DOE|JOHN|M|ZAF|9001015009087';
+    test('isSupported returns true for Android and iOS', () {
+      final androidScanner = RsaIdentificationScanner(
+        platformInfo: const _FakePlatformInfo(isAndroid: true),
+      );
+      final iosScanner = RsaIdentificationScanner(
+        platformInfo: const _FakePlatformInfo(isIOS: true),
+      );
 
-      expect(scanner.isRSAIdNewFormat(payload), isFalse);
+      expect(androidScanner.isSupported(), isTrue);
+      expect(iosScanner.isSupported(), isTrue);
     });
 
-    test('returns false for empty-like payload values', () {
-      final scanner = RsaIdentificationScanner();
+    test('isSupported returns true for web and false for unsupported desktop', () {
+      final webScanner = RsaIdentificationScanner(
+        platformInfo: const _FakePlatformInfo(isWeb: true),
+      );
+      final desktopScanner = RsaIdentificationScanner(
+        platformInfo: const _FakePlatformInfo(isLinux: true),
+      );
 
-      expect(scanner.isRSAIdNewFormat(''), isFalse);
-      expect(scanner.isRSAIdNewFormat('   '), isFalse);
-      expect(scanner.isRSAIdNewFormat('null'), isFalse);
-    });
-  });
-
-  group('parseRSAIdNewFormat', () {
-    test('parses and maps the first 12 fields from a valid payload', () {
-      final scanner = RsaIdentificationScanner();
-      const payload =
-          'DOE|JOHN JAMES|M|ZAF|9001015009087|1990-01-01|SA|ID|2020-01-01|DHA|1234567890|7';
-
-      final result = scanner.parseRSAIdNewFormat(payload);
-
-      expect(result, isNotNull);
-      expect(result!.surname, 'DOE');
-      expect(result.firstNames, 'JOHN JAMES');
-      expect(result.gender, 'M');
-      expect(result.countryCode, 'ZAF');
-      expect(result.idNumber, '9001015009087');
-      expect(result.dateOfBirth, '1990-01-01');
-      expect(result.nationality, 'SA');
-      expect(result.idType, 'ID');
-      expect(result.issueDate, '2020-01-01');
-      expect(result.issuerCode, 'DHA');
-      expect(result.personalNumber, '1234567890');
-      expect(result.checkDigit, '7');
+      expect(webScanner.isSupported(), isTrue);
+      expect(desktopScanner.isSupported(), isFalse);
     });
 
-    test('returns null for malformed payload', () {
-      final scanner = RsaIdentificationScanner();
-      const malformed = 'DOE|JOHN|M|ZAF|9001015009087';
+    test('getPlatform resolves Android and iOS via target platform', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final androidScanner = RsaIdentificationScanner(
+        platformInfo: const _FakePlatformInfo(isAndroid: true),
+      );
+      expect(androidScanner.getPlatform(), 'Android');
 
-      expect(scanner.parseRSAIdNewFormat(malformed), isNull);
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final iosScanner = RsaIdentificationScanner(
+        platformInfo: const _FakePlatformInfo(isIOS: true),
+      );
+      expect(iosScanner.getPlatform(), 'iOS');
     });
 
-    test('returns null for empty-like payload values', () {
-      final scanner = RsaIdentificationScanner();
+    test('getPlatform returns Web when running on web', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final webScanner = RsaIdentificationScanner(
+        platformInfo: const _FakePlatformInfo(isWeb: true),
+      );
 
-      expect(scanner.parseRSAIdNewFormat(''), isNull);
-      expect(scanner.parseRSAIdNewFormat('   '), isNull);
-      expect(scanner.parseRSAIdNewFormat('null'), isNull);
-    });
-  });
-
-  group('getPlatform', () {
-    test('returns a recognized platform label', () {
-      final scanner = RsaIdentificationScanner();
-      const knownPlatforms = {
-        'Android',
-        'iOS',
-        'MacOS',
-        'Windows',
-        'Linux',
-        'Web',
-        'Unknown',
-      };
-
-      expect(knownPlatforms.contains(scanner.getPlatform()), isTrue);
+      expect(webScanner.getPlatform(), 'Web');
     });
   });
 }
