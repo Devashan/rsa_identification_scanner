@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -72,6 +75,80 @@ class RsaIdentificationScanner {
 
   String getPlatform() {
     return describePlatform(_platformInfo);
+  }
+
+  /// Returns a scan payload from text and/or raw bytes.
+  ///
+  /// This is useful for South African driving licence PDF417 barcodes where
+  /// scanners often provide encrypted binary bytes without a UTF-8 `rawValue`.
+  ///
+  /// If the bytes can be represented as plain text, text is returned.
+  /// Otherwise the bytes are encoded as a `BINARY_BASE64:<payload>` string.
+  String? extractScannedPayload({
+    String? rawValue,
+    Uint8List? rawBytes,
+    bool preferRawValue = true,
+  }) {
+    final normalizedRawValue = rawValue?.trim();
+    final hasRawValue = normalizedRawValue != null && normalizedRawValue.isNotEmpty;
+
+    if (preferRawValue && hasRawValue) {
+      return normalizedRawValue;
+    }
+
+    if (rawBytes == null || rawBytes.isEmpty) {
+      return hasRawValue ? normalizedRawValue : null;
+    }
+
+    final utf8Decoded = _tryDecodeUtf8(rawBytes);
+    if (utf8Decoded != null && _isMostlyPrintableText(utf8Decoded)) {
+      return utf8Decoded.trim();
+    }
+
+    if (!preferRawValue && hasRawValue) {
+      return normalizedRawValue;
+    }
+
+    return 'BINARY_BASE64:${base64Encode(rawBytes)}';
+  }
+
+  /// Heuristic check for encrypted/binary SA licence payloads.
+  bool isLikelyEncryptedBinaryLicenseData(Uint8List rawBytes) {
+    if (rawBytes.length < 32) {
+      return false;
+    }
+
+    final asUtf8 = _tryDecodeUtf8(rawBytes);
+    if (asUtf8 == null) {
+      return true;
+    }
+
+    return !_isMostlyPrintableText(asUtf8);
+  }
+
+  String? _tryDecodeUtf8(Uint8List bytes) {
+    try {
+      return utf8.decode(bytes);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  bool _isMostlyPrintableText(String text) {
+    if (text.isEmpty) {
+      return false;
+    }
+
+    var printable = 0;
+    for (final rune in text.runes) {
+      final isPrintableAscii = rune >= 32 && rune <= 126;
+      final isWhitespace = rune == 9 || rune == 10 || rune == 13;
+      if (isPrintableAscii || isWhitespace) {
+        printable++;
+      }
+    }
+
+    return printable / text.runes.length >= 0.9;
   }
 }
 

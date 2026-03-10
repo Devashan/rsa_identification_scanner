@@ -4,7 +4,7 @@
 
 It provides:
 - `RsaScannerView`: a ready-to-use camera scanner widget built on `mobile_scanner`.
-- `RsaIdentificationScanner`: helper methods to detect and parse RSA ID barcode content.
+- `RsaIdentificationScanner`: helper methods to detect and parse RSA ID barcode content, including encrypted/binary South African driving licence payload handling.
 
 ## Installation
 
@@ -81,6 +81,36 @@ class _ScannerScreenState extends State<ScannerScreen> {
 }
 ```
 
+
+## Handling encrypted binary SA driving licence payloads
+
+Some scanners return South African driving licence PDF417 data as encrypted binary bytes where `rawValue` is empty or unreadable. Use `extractScannedPayload` to normalize either text or bytes:
+
+```dart
+onScanResult: (capture) {
+  if (capture.barcodes.isEmpty) return;
+  final barcode = capture.barcodes.first;
+
+  final payload = scanner.extractScannedPayload(
+    rawValue: barcode.rawValue,
+    rawBytes: barcode.rawBytes,
+  );
+
+  if (payload == null) return;
+
+  if (payload.startsWith('BINARY_BASE64:')) {
+    debugPrint('Encrypted binary licence payload detected');
+    // Send payload to your backend decrypt/verify service.
+    return;
+  }
+
+  if (scanner.isRSAIdNewFormat(payload)) {
+    final parsed = scanner.parseRSAIdNewFormat(payload);
+    debugPrint('ID Number: ${parsed?.idNumber}');
+  }
+}
+```
+
 ## RSA parse example (`parseRSAIdNewFormat`)
 
 ```dart
@@ -101,7 +131,7 @@ if (parsed != null) {
 
 ## Known limitations
 
-- `isRSAIdNewFormat` currently validates only by checking for a minimum number of `|`-separated fields.
+- `isRSAIdNewFormat` validates structure only (12 pipe-delimited fields and required indexes), not full data correctness.
 - `parseRSAIdNewFormat` does not verify check digits or cryptographic authenticity; it only maps fields by index.
 - `RsaIdentificationScanner.isSupported()` returns support for Android, iOS, and web, but camera behavior depends on platform/browser/device capabilities.
 - Duplicate barcode filtering and scan throttling are app-level concerns and should be handled in your `onScanResult` callback.
