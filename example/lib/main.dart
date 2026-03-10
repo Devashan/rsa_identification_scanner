@@ -36,15 +36,30 @@ class _MyAppState extends State<MyApp> {
                 onScanResult: (capture) {
                   if (capture.barcodes.isNotEmpty) {
                     final barcode = capture.barcodes.first;
-                    if (barcode.rawValue != null) {
+                    {
+                      final payload = rsaScanner.extractScannedPayload(
+                        rawValue: barcode.rawValue,
+                        rawBytes: barcode.rawBytes,
+                      );
+
+                      if (payload == null) return;
+
                       setState(() {
-                        _scannedValue = barcode.rawValue;
+                        _scannedValue = payload;
                         if (_scannedValue != _previousScannedValue) {
                           _previousScannedValue = _scannedValue;
                         } else {
                           // Duplicate scan, ignore
                           return;
                         }
+                        if (barcode.rawBytes != null &&
+                            rsaScanner.isLikelyEncryptedBinaryLicenseData(
+                              barcode.rawBytes!,
+                            )) {
+                          print('Encrypted binary SA licence payload captured.');
+                          return;
+                        }
+
                         // Check if new RSA ID format
                         if (rsaScanner.isRSAIdNewFormat(_scannedValue!)) {
                           // Process RSA ID

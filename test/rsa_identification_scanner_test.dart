@@ -1,36 +1,7 @@
-import 'package:flutter/foundation.dart';
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rsa_identification_scanner/rsa_identification_scanner.dart';
-import 'package:rsa_identification_scanner/src/platform/platform_info.dart';
-
-class _FakePlatformInfo implements PlatformInfo {
-  const _FakePlatformInfo({
-    this.isWeb = false,
-    this.isAndroid = false,
-    this.isIOS = false,
-    this.isMacOS = false,
-    this.isWindows = false,
-    this.isLinux = false,
-  });
-
-  @override
-  final bool isWeb;
-
-  @override
-  final bool isAndroid;
-
-  @override
-  final bool isIOS;
-
-  @override
-  final bool isMacOS;
-
-  @override
-  final bool isWindows;
-
-  @override
-  final bool isLinux;
-}
 
 void main() {
   final scanner = RsaIdentificationScanner();
@@ -68,6 +39,50 @@ void main() {
       expect(scanner.isRSAIdNewFormat(missingSurname), isFalse);
       expect(scanner.isRSAIdNewFormat(missingIdNumber), isFalse);
       expect(scanner.isRSAIdNewFormat(missingDateOfBirth), isFalse);
+    });
+  });
+
+  group('extractScannedPayload', () {
+    test('returns trimmed raw value when available', () {
+      final payload = scanner.extractScannedPayload(
+        rawValue: '  DOE|JOHN|M|ZA|8001015009087|19800101|ZA|ID|20230101|DHA|1234567890|7  ',
+      );
+
+      expect(payload, 'DOE|JOHN|M|ZA|8001015009087|19800101|ZA|ID|20230101|DHA|1234567890|7');
+    });
+
+    test('returns decoded text from raw bytes', () {
+      final payload = scanner.extractScannedPayload(
+        rawBytes: Uint8List.fromList('TEXT_PAYLOAD'.codeUnits),
+      );
+
+      expect(payload, 'TEXT_PAYLOAD');
+    });
+
+    test('returns base64 wrapped payload for binary bytes', () {
+      final payload = scanner.extractScannedPayload(
+        rawBytes: Uint8List.fromList(List<int>.generate(64, (index) => index)),
+      );
+
+      expect(payload, startsWith('BINARY_BASE64:'));
+    });
+  });
+
+  group('isLikelyEncryptedBinaryLicenseData', () {
+    test('returns true for non-UTF8 binary data with reasonable length', () {
+      final bytes = Uint8List.fromList(
+        List<int>.filled(40, 0xFF),
+      );
+
+      expect(scanner.isLikelyEncryptedBinaryLicenseData(bytes), isTrue);
+    });
+
+    test('returns false for readable text data', () {
+      final bytes = Uint8List.fromList(
+        'DOE|JOHN|M|ZA|8001015009087|19800101|ZA|ID'.codeUnits,
+      );
+
+      expect(scanner.isLikelyEncryptedBinaryLicenseData(bytes), isFalse);
     });
   });
 
