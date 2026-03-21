@@ -104,5 +104,18 @@ void main() {
 
       expect(scanner.parseRSAIdNewFormat(dataWith11Fields), isNull);
     });
+
+    test('trims each parsed field', () {
+      const dataWithWhitespace =
+          ' DOE | JOHN | M | ZA | 8001015009087 | 19800101 | ZA | ID | 20230101 | DHA | 1234567890 | 7 ';
+
+      final parsed = scanner.parseRSAIdNewFormat(dataWithWhitespace);
+
+      expect(parsed, isNotNull);
+      expect(parsed!.surname, 'DOE');
+      expect(parsed.firstNames, 'JOHN');
+      expect(parsed.idNumber, '8001015009087');
+      expect(parsed.checkDigit, '7');
+    });
   });
 }

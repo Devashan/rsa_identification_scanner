@@ -21,7 +21,7 @@ typedef NewIdFormatRecord = ({
   String checkDigit,
 });
 
-/// A Calculator.
+/// Scanner and parser utilities for RSA identification barcode payloads.
 class RsaIdentificationScanner {
   RsaIdentificationScanner({PlatformInfo? platformInfo})
     : _platformInfo = platformInfo ?? getPlatformInfo();
@@ -35,7 +35,7 @@ class RsaIdentificationScanner {
   bool isRSAIdNewFormat(String data) {
     if (data.trim().isEmpty) return false;
 
-    final parts = data.split('|');
+    final parts = data.split('|').map((part) => part.trim()).toList(growable: false);
 
     if (parts.length != 12) {
       return false;
@@ -56,7 +56,7 @@ class RsaIdentificationScanner {
       return null;
     }
 
-    final parts = data.split('|');
+    final parts = data.split('|').map((part) => part.trim()).toList(growable: false);
     return (
       surname: parts[0],
       firstNames: parts[1],

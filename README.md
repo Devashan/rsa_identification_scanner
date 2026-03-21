@@ -117,7 +117,7 @@ onScanResult: (capture) {
 final scanner = RsaIdentificationScanner();
 
 const sample =
-    'DOE|JANE ANN|F|ZAF|9001014800082|1990-01-01|RSA|ID|2022-05-11|DHA|1234567890|7|';
+    'DOE|JANE ANN|F|ZAF|9001014800082|1990-01-01|RSA|ID|2022-05-11|DHA|1234567890|7';
 
 final parsed = scanner.parseRSAIdNewFormat(sample);
 
