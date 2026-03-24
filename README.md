@@ -129,6 +129,52 @@ if (parsed != null) {
 }
 ```
 
+
+## Decrypting South African driving licence payloads (binary PDF417)
+
+For 720-byte encrypted licence payloads (or base64-encoded equivalents), you can now run the full decode flow:
+
+```dart
+final scanner = RsaIdentificationScanner();
+
+// From scanner bytes:
+final result = scanner.decryptLicenseBytes(rawLicenseBytes);
+
+// Or from base64:
+final resultFromBase64 = scanner.decryptLicenseBase64(base64Payload);
+
+print(result.version); // SaLicenseVersion.version2, etc.
+print(result.decryptedPayload.length); // 714
+print(result.decryptedPayloadBase64); // Useful for debugging/fixtures
+```
+
+What is validated:
+- Total input length is exactly 720 bytes.
+- The 2-byte marker after version is `00 00`.
+- Encrypted payload is split into fixed blocks: 128x5 and 74x1.
+- RSA public-key raw operation is used (`NO_PADDING` equivalent).
+
+If you need custom keys (for example version 1 support), construct with custom key sets:
+
+```dart
+final scanner = RsaIdentificationScanner.withLicenseKeys(
+  rsaKeySetsByVersion: {
+    SaLicenseVersion.version1: const SaLicenseRsaKeySet(
+      keyFor128ByteBlocksPem: '-----BEGIN RSA PUBLIC KEY-----...'
+      '-----END RSA PUBLIC KEY-----',
+      keyFor74ByteBlockPem: '-----BEGIN RSA PUBLIC KEY-----...'
+      '-----END RSA PUBLIC KEY-----',
+    ),
+    SaLicenseVersion.version2: const SaLicenseRsaKeySet(
+      keyFor128ByteBlocksPem: '-----BEGIN RSA PUBLIC KEY-----...'
+      '-----END RSA PUBLIC KEY-----',
+      keyFor74ByteBlockPem: '-----BEGIN RSA PUBLIC KEY-----...'
+      '-----END RSA PUBLIC KEY-----',
+    ),
+  },
+);
+```
+
 ## Known limitations
 
 - `isRSAIdNewFormat` validates structure only (12 pipe-delimited fields and required indexes), not full data correctness.
