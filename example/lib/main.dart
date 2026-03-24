@@ -56,9 +56,10 @@ class _MyAppState extends State<MyApp> {
                         final decrypted = rsaScanner.decryptLicenseBytes(
                           barcode.rawBytes!,
                         );
-                        final parsedLicense = rsaScanner.parseDecryptedLicensePayload(
-                          decrypted.decryptedPayload,
-                        );
+                        final parsedLicense = rsaScanner
+                            .parseDecryptedLicensePayload(
+                              decrypted.decryptedPayload,
+                            );
 
                         debugPrint('Parsed person info from license:');
                         debugPrint('Surname: ${parsedLicense.surname}');
@@ -66,10 +67,13 @@ class _MyAppState extends State<MyApp> {
                         debugPrint('ID Number: ${parsedLicense.idNumber}');
                         debugPrint('Birthdate: ${parsedLicense.birthdate}');
                         debugPrint('Gender: ${parsedLicense.gender}');
-                        debugPrint('License Number: ${parsedLicense.licenseNumber}');
+                        debugPrint(
+                          'License Number: ${parsedLicense.licenseNumber}',
+                        );
 
                         setState(() {
-                          _scannedValue = 'Decrypted SA licence (${decrypted.version.name})\n'
+                          _scannedValue =
+                              'Decrypted SA licence (${decrypted.version.name})\n'
                               'Name: ${parsedLicense.initials} ${parsedLicense.surname}\n'
                               'ID: ${parsedLicense.idNumber}\n'
                               'DOB: ${parsedLicense.birthdate}\n'
@@ -79,7 +83,8 @@ class _MyAppState extends State<MyApp> {
                         return;
                       } on Object catch (error) {
                         setState(() {
-                          _scannedValue = 'Failed to decrypt licence payload: $error';
+                          _scannedValue =
+                              'Failed to decrypt licence payload: $error';
                         });
                         return;
                       }
@@ -98,12 +103,12 @@ class _MyAppState extends State<MyApp> {
                 },
               ),
             ),
-            Expanded(
-              flex: 1,
+            SingleChildScrollView(
+              // flex: 1,
               child: Center(
                 child: Text(
                   _scannedValue == null
-                      ? 'Scan an RSA ID or barcode'
+                      ? 'Scan an RSA ID/Driving License or barcode'
                       : 'Scanned Value: $_scannedValue',
                   style: Theme.of(context).textTheme.headlineSmall,
                   textAlign: TextAlign.center,
