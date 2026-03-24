@@ -36,43 +36,48 @@ class _MyAppState extends State<MyApp> {
                 onScanResult: (capture) {
                   if (capture.barcodes.isNotEmpty) {
                     final barcode = capture.barcodes.first;
-                    {
-                      final payload = rsaScanner.extractScannedPayload(
-                        rawValue: barcode.rawValue,
-                        rawBytes: barcode.rawBytes,
-                      );
+                    final payload = rsaScanner.extractScannedPayload(
+                      rawValue: barcode.rawValue,
+                      rawBytes: barcode.rawBytes,
+                    );
+                    if (payload == null) return;
 
-                      if (payload == null) return;
+                    if (payload == _previousScannedValue) {
+                      // Duplicate scan, ignore.
+                      return;
+                    }
+                    _previousScannedValue = payload;
 
-                      setState(() {
-                        _scannedValue = payload;
-                        if (_scannedValue != _previousScannedValue) {
-                          _previousScannedValue = _scannedValue;
-                        } else {
-                          // Duplicate scan, ignore
-                          return;
-                        }
-                        if (barcode.rawBytes != null &&
-                            rsaScanner.isLikelyEncryptedBinaryLicenseData(
-                              barcode.rawBytes!,
-                            )) {
-                          print('Encrypted binary SA licence payload captured.');
-                          return;
-                        }
+                    if (barcode.rawBytes != null &&
+                        rsaScanner.isLikelyEncryptedBinaryLicenseData(
+                          barcode.rawBytes!,
+                        )) {
+                      try {
+                        final decrypted = rsaScanner.decryptLicenseBytes(
+                          barcode.rawBytes!,
+                        );
+                        setState(() {
+                          _scannedValue =
+                              'Decrypted SA licence (${decrypted.version.name}): '
+                              '${decrypted.decryptedPayloadBase64}';
+                        });
+                        return;
+                      } on Object catch (error) {
+                        setState(() {
+                          _scannedValue = 'Failed to decrypt licence payload: $error';
+                        });
+                        return;
+                      }
+                    }
 
-                        // Check if new RSA ID format
-                        if (rsaScanner.isRSAIdNewFormat(_scannedValue!)) {
-                          // Process RSA ID
-                          final rsaData = rsaScanner.parseRSAIdNewFormat(
-                            _scannedValue!,
-                          );
-                          print('Surname: ${rsaData?.surname}');
-                          print('First Names: ${rsaData?.firstNames}');
-                        }
-                      });
-                      // You might want to navigate away or stop the scanner here
-                      // For simplicity, we'll just display the value.
-                      // print('Scanned: ${barcode.rawValue}');
+                    setState(() {
+                      _scannedValue = payload;
+                    });
+
+                    if (rsaScanner.isRSAIdNewFormat(payload)) {
+                      final rsaData = rsaScanner.parseRSAIdNewFormat(payload);
+                      print('Surname: ${rsaData?.surname}');
+                      print('First Names: ${rsaData?.firstNames}');
                     }
                   }
                 },
