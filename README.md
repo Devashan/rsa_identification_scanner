@@ -154,7 +154,8 @@ What is validated:
 - Encrypted payload is split into fixed blocks: 128x5 and 74x1.
 - RSA public-key raw operation is used (`NO_PADDING` equivalent).
 
-If you need custom keys (for example version 1 support), construct with custom key sets:
+By default, the scanner includes built-in key sets for both version 1 and version 2 payloads.  
+If you need to override these keys (for testing or custom environments), construct with custom key sets:
 
 ```dart
 final scanner = RsaIdentificationScanner.withLicenseKeys(

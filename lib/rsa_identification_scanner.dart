@@ -50,6 +50,10 @@ class RsaIdentificationScanner {
   RsaIdentificationScanner({PlatformInfo? platformInfo})
     : _platformInfo = platformInfo ?? getPlatformInfo(),
       _rsaKeySetsByVersion = {
+        SaLicenseVersion.version1: const SaLicenseRsaKeySet(
+          keyFor128ByteBlocksPem: _version1Key128Pem,
+          keyFor74ByteBlockPem: _version1Key74Pem,
+        ),
         SaLicenseVersion.version2: const SaLicenseRsaKeySet(
           keyFor128ByteBlocksPem: _version2Key128Pem,
           keyFor74ByteBlockPem: _version2Key74Pem,
@@ -62,6 +66,10 @@ class RsaIdentificationScanner {
   }) : _platformInfo = platformInfo ?? getPlatformInfo(),
        _rsaKeySetsByVersion =
            rsaKeySetsByVersion ?? {
+             SaLicenseVersion.version1: const SaLicenseRsaKeySet(
+               keyFor128ByteBlocksPem: _version1Key128Pem,
+               keyFor74ByteBlockPem: _version1Key74Pem,
+             ),
              SaLicenseVersion.version2: const SaLicenseRsaKeySet(
                keyFor128ByteBlocksPem: _version2Key128Pem,
                keyFor74ByteBlockPem: _version2Key74Pem,
@@ -443,6 +451,23 @@ const String _version2Key74Pem = '''
 MF8CSwC0BKDfEdHKz/GhoEjU1XP5U6YsWD10klknVhpteh4rFAQlJq9wtVBUc5Dq
 bsdI0w/bga20kODDahmGtASy9fae9dobZj5ZUJEw5wIQMJz+2XGf4qXiDJu0R2U4
 Kw==
+-----END RSA PUBLIC KEY-----
+''';
+
+const String _version1Key128Pem = '''
+-----BEGIN RSA PUBLIC KEY-----
+MIGXAoGBAP7S4cJ+M2MxbncxenpSxUmBOVGGvkl0dgxyUY1j4FRKSNCIszLFsMNw
+x2XWXZg8H53gpCsxDMwHrncL0rYdak3M6sdXaJvcv2CEePrzEvYIfMSWw3Ys9cRl
+HK7No0mfrn7bfrQOPhjrMEFw6R7VsVaqzm9DLW7KbMNYUd6MZ49nAhEAu3l//ex/
+nkLJ1vebE3BZ2w==
+-----END RSA PUBLIC KEY-----
+''';
+
+const String _version1Key74Pem = '''
+-----BEGIN RSA PUBLIC KEY-----
+MGACSwD/POxrX0Djw2YUUbn8+u866wbcIynA5vTczJJ5cmcWzhW74F7tLFcRvPj1
+tsj3J221xDv6owQNwBqxS5xNFvccDOXqlT8MdUxrFwIRANsFuoItmswz+rfY9Cf5
+zmU=
 -----END RSA PUBLIC KEY-----
 ''';
 

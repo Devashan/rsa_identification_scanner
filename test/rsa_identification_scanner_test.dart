@@ -120,6 +120,14 @@ void main() {
   });
 
   group('license decryption flow', () {
+    test('detects version 1 bytes', () {
+      final version = scanner.detectLicenseVersion(
+        Uint8List.fromList([0x01, 0xE1, 0x02, 0x45, 0x00, 0x00]),
+      );
+
+      expect(version, SaLicenseVersion.version1);
+    });
+
     test('detects version 2 bytes', () {
       final version = scanner.detectLicenseVersion(
         Uint8List.fromList([0x01, 0x9B, 0x09, 0x45, 0x00, 0x00]),
@@ -158,6 +166,25 @@ void main() {
       final result = scanner.decryptLicenseBytes(licenseBytes);
 
       expect(result.version, SaLicenseVersion.version2);
+      expect(result.decryptedPayload.length, 714);
+      expect(result.decryptedPayload.every((byte) => byte == 0), isTrue);
+      expect(result.decryptedPayloadBase64, base64Encode(List<int>.filled(714, 0)));
+    });
+
+    test('decrypts a version 1 zeroed payload into zeroed binary output', () {
+      final licenseBytes = Uint8List.fromList([
+        0x01,
+        0xE1,
+        0x02,
+        0x45,
+        0x00,
+        0x00,
+        ...List<int>.filled(714, 0),
+      ]);
+
+      final result = scanner.decryptLicenseBytes(licenseBytes);
+
+      expect(result.version, SaLicenseVersion.version1);
       expect(result.decryptedPayload.length, 714);
       expect(result.decryptedPayload.every((byte) => byte == 0), isTrue);
       expect(result.decryptedPayloadBase64, base64Encode(List<int>.filled(714, 0)));
