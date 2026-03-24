@@ -56,10 +56,25 @@ class _MyAppState extends State<MyApp> {
                         final decrypted = rsaScanner.decryptLicenseBytes(
                           barcode.rawBytes!,
                         );
+                        final parsedLicense = rsaScanner.parseDecryptedLicensePayload(
+                          decrypted.decryptedPayload,
+                        );
+
+                        debugPrint('Parsed person info from license:');
+                        debugPrint('Surname: ${parsedLicense.surname}');
+                        debugPrint('Initials: ${parsedLicense.initials}');
+                        debugPrint('ID Number: ${parsedLicense.idNumber}');
+                        debugPrint('Birthdate: ${parsedLicense.birthdate}');
+                        debugPrint('Gender: ${parsedLicense.gender}');
+                        debugPrint('License Number: ${parsedLicense.licenseNumber}');
+
                         setState(() {
-                          _scannedValue =
-                              'Decrypted SA licence (${decrypted.version.name}): '
-                              '${decrypted.decryptedPayloadBase64}';
+                          _scannedValue = 'Decrypted SA licence (${decrypted.version.name})\n'
+                              'Name: ${parsedLicense.initials} ${parsedLicense.surname}\n'
+                              'ID: ${parsedLicense.idNumber}\n'
+                              'DOB: ${parsedLicense.birthdate}\n'
+                              'Gender: ${parsedLicense.gender}\n'
+                              'License: ${parsedLicense.licenseNumber}';
                         });
                         return;
                       } on Object catch (error) {

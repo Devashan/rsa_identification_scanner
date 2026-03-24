@@ -45,6 +45,76 @@ class SaLicenseDecryptionResult {
   String get decryptedPayloadBase64 => base64Encode(decryptedPayload);
 }
 
+class SaDrivingLicense {
+  const SaDrivingLicense({
+    required this.vehicleCodes,
+    required this.surname,
+    required this.initials,
+    required this.prDPCode,
+    required this.idCountryOfIssue,
+    required this.licenseCountryOfIssue,
+    required this.vehicleRestrictions,
+    required this.licenseNumber,
+    required this.idNumber,
+    required this.idNumberType,
+    required this.licenseCodeIssueDates,
+    required this.driverRestrictionCodes,
+    required this.prDPermitExpiryDate,
+    required this.licenseIssueNumber,
+    required this.birthdate,
+    required this.licenseIssueDate,
+    required this.licenseExpiryDate,
+    required this.gender,
+    required this.imageWidth,
+    required this.imageHeight,
+  });
+
+  final List<String> vehicleCodes;
+  final String surname;
+  final String initials;
+  final String prDPCode;
+  final String idCountryOfIssue;
+  final String licenseCountryOfIssue;
+  final List<String> vehicleRestrictions;
+  final String licenseNumber;
+  final String idNumber;
+  final String idNumberType;
+  final List<String> licenseCodeIssueDates;
+  final String driverRestrictionCodes;
+  final String prDPermitExpiryDate;
+  final String licenseIssueNumber;
+  final String birthdate;
+  final String licenseIssueDate;
+  final String licenseExpiryDate;
+  final String gender;
+  final int imageWidth;
+  final int imageHeight;
+
+  @override
+  String toString() {
+    return 'Vehicle codes: $vehicleCodes\n'
+        'Surname: $surname\n'
+        'Initials: $initials\n'
+        'PrDP Code: $prDPCode\n'
+        'ID Country of Issue: $idCountryOfIssue\n'
+        'License Country of Issue: $licenseCountryOfIssue\n'
+        'Vehicle Restriction: $vehicleRestrictions\n'
+        'License Number: $licenseNumber\n'
+        'ID Number: $idNumber\n'
+        'ID number type: $idNumberType\n'
+        'License code issue date: $licenseCodeIssueDates\n'
+        'Driver restriction codes: $driverRestrictionCodes\n'
+        'PrDP permit expiry date: $prDPermitExpiryDate\n'
+        'License issue number: $licenseIssueNumber\n'
+        'Birthdate: $birthdate\n'
+        'License Valid From: $licenseIssueDate\n'
+        'License Valid To: $licenseExpiryDate\n'
+        'Gender: $gender\n'
+        'Image width: $imageWidth\n'
+        'Image height: $imageHeight';
+  }
+}
+
 /// Scanner and parser utilities for RSA identification barcode payloads.
 class RsaIdentificationScanner {
   RsaIdentificationScanner({PlatformInfo? platformInfo})
@@ -214,6 +284,125 @@ class RsaIdentificationScanner {
     return decryptLicenseBytes(data);
   }
 
+  SaDrivingLicense decryptAndParseLicenseBytes(Uint8List data) {
+    final decrypted = decryptLicenseBytes(data);
+    return parseDecryptedLicensePayload(decrypted.decryptedPayload);
+  }
+
+  SaDrivingLicense decryptAndParseLicenseBase64(String base64Payload) {
+    final decrypted = decryptLicenseBase64(base64Payload);
+    return parseDecryptedLicensePayload(decrypted.decryptedPayload);
+  }
+
+  SaDrivingLicense parseDecryptedLicensePayload(Uint8List decryptedPayload) {
+    final markerIndex = decryptedPayload.indexOf(0x82);
+    if (markerIndex < 0 || markerIndex + 1 >= decryptedPayload.length) {
+      throw const FormatException('Could not find SA license payload section marker (0x82).');
+    }
+
+    var index = markerIndex + 2;
+
+    final vehicleCodesResult = _readStrings(decryptedPayload, index, 4);
+    final vehicleCodes = vehicleCodesResult.$1;
+    index = vehicleCodesResult.$2;
+
+    final surnameResult = _readString(decryptedPayload, index);
+    final surname = surnameResult.$1;
+    index = surnameResult.$2;
+    var delimiter = surnameResult.$3;
+
+    final initialsResult = _readString(decryptedPayload, index);
+    final initials = initialsResult.$1;
+    index = initialsResult.$2;
+    delimiter = initialsResult.$3;
+
+    var prDPCode = '';
+    if (delimiter == 0xE0) {
+      final prdpResult = _readString(decryptedPayload, index);
+      prDPCode = prdpResult.$1;
+      index = prdpResult.$2;
+    }
+
+    final idCountryResult = _readString(decryptedPayload, index);
+    final idCountryOfIssue = idCountryResult.$1;
+    index = idCountryResult.$2;
+
+    final licenseCountryResult = _readString(decryptedPayload, index);
+    final licenseCountryOfIssue = licenseCountryResult.$1;
+    index = licenseCountryResult.$2;
+
+    final vehicleRestrictionsResult = _readStrings(decryptedPayload, index, 4);
+    final vehicleRestrictions = vehicleRestrictionsResult.$1;
+    index = vehicleRestrictionsResult.$2;
+
+    final licenseNumberResult = _readString(decryptedPayload, index);
+    final licenseNumber = licenseNumberResult.$1;
+    index = licenseNumberResult.$2;
+
+    if (index + 13 > decryptedPayload.length) {
+      throw const FormatException('Unexpected end of payload while reading ID number.');
+    }
+    final idNumber = String.fromCharCodes(Uint8List.sublistView(decryptedPayload, index, index + 13));
+    index += 13;
+
+    final idNumberType = decryptedPayload[index].toString().padLeft(2, '0');
+    index += 1;
+
+    final nibbleQueue = <int>[];
+    while (index < decryptedPayload.length) {
+      final currentByte = decryptedPayload[index++];
+      if (currentByte == 0x57) {
+        break;
+      }
+
+      nibbleQueue.add(currentByte >> 4);
+      nibbleQueue.add(currentByte & 0x0F);
+    }
+
+    final licenseCodeIssueDates = _readNibbleDateList(nibbleQueue, 4);
+    final driverRestrictionCodes = '${nibbleQueue.removeAt(0)}${nibbleQueue.removeAt(0)}';
+    final prDPermitExpiryDate = _readNibbleDateString(nibbleQueue);
+    final licenseIssueNumber = '${nibbleQueue.removeAt(0)}${nibbleQueue.removeAt(0)}';
+    final birthdate = _readNibbleDateString(nibbleQueue);
+    final licenseIssueDate = _readNibbleDateString(nibbleQueue);
+    final licenseExpiryDate = _readNibbleDateString(nibbleQueue);
+
+    final genderCode = '${nibbleQueue.removeAt(0)}${nibbleQueue.removeAt(0)}';
+    final gender = genderCode == '01' ? 'male' : 'female';
+
+    index += 3;
+    if (index + 3 >= decryptedPayload.length) {
+      throw const FormatException('Unexpected end of payload while reading image metadata.');
+    }
+
+    final imageWidth = decryptedPayload[index];
+    index += 2;
+    final imageHeight = decryptedPayload[index];
+
+    return SaDrivingLicense(
+      vehicleCodes: vehicleCodes,
+      surname: surname,
+      initials: initials,
+      prDPCode: prDPCode,
+      idCountryOfIssue: idCountryOfIssue,
+      licenseCountryOfIssue: licenseCountryOfIssue,
+      vehicleRestrictions: vehicleRestrictions,
+      licenseNumber: licenseNumber,
+      idNumber: idNumber,
+      idNumberType: idNumberType,
+      licenseCodeIssueDates: licenseCodeIssueDates,
+      driverRestrictionCodes: driverRestrictionCodes,
+      prDPermitExpiryDate: prDPermitExpiryDate,
+      licenseIssueNumber: licenseIssueNumber,
+      birthdate: birthdate,
+      licenseIssueDate: licenseIssueDate,
+      licenseExpiryDate: licenseExpiryDate,
+      gender: gender,
+      imageWidth: imageWidth,
+      imageHeight: imageHeight,
+    );
+  }
+
   String getPlatform() {
     return describePlatform(_platformInfo);
   }
@@ -313,6 +502,84 @@ class RsaIdentificationScanner {
     }
     return buffer.toString();
   }
+}
+
+List<String> _readNibbleDateList(List<int> nibbleQueue, int length) {
+  final dateList = <String>[];
+  for (var i = 0; i < length; i++) {
+    final date = _readNibbleDateString(nibbleQueue);
+    if (date.isNotEmpty) {
+      dateList.add(date);
+    }
+  }
+  return dateList;
+}
+
+String _readNibbleDateString(List<int> nibbleQueue) {
+  if (nibbleQueue.isEmpty) {
+    throw const FormatException('Unexpected end of nibble queue while reading date.');
+  }
+
+  final m = nibbleQueue.removeAt(0);
+  if (m == 10) {
+    return '';
+  }
+
+  if (nibbleQueue.length < 7) {
+    throw const FormatException('Invalid nibble queue length for date value.');
+  }
+
+  final c = nibbleQueue.removeAt(0);
+  final d = nibbleQueue.removeAt(0);
+  final y = nibbleQueue.removeAt(0);
+  final m1 = nibbleQueue.removeAt(0);
+  final m2 = nibbleQueue.removeAt(0);
+  final d1 = nibbleQueue.removeAt(0);
+  final d2 = nibbleQueue.removeAt(0);
+
+  return '$m$c$d$y/$m1$m2/$d1$d2';
+}
+
+(List<String>, int) _readStrings(Uint8List data, int index, int length) {
+  final strings = <String>[];
+  var i = 0;
+  while (i < length) {
+    final valueBuffer = StringBuffer();
+    while (true) {
+      final currentByte = data[index++];
+      if (currentByte == 0xE0) {
+        break;
+      } else if (currentByte == 0xE1) {
+        if (valueBuffer.isNotEmpty) {
+          i += 1;
+        }
+        break;
+      }
+      valueBuffer.writeCharCode(currentByte);
+    }
+    i += 1;
+    if (valueBuffer.isNotEmpty) {
+      strings.add(valueBuffer.toString());
+    }
+  }
+
+  return (strings, index);
+}
+
+(String, int, int) _readString(Uint8List data, int index) {
+  final valueBuffer = StringBuffer();
+  var delimiter = 0xE0;
+
+  while (true) {
+    final currentByte = data[index++];
+    if (currentByte == 0xE0 || currentByte == 0xE1) {
+      delimiter = currentByte;
+      break;
+    }
+    valueBuffer.writeCharCode(currentByte);
+  }
+
+  return (valueBuffer.toString(), index, delimiter);
 }
 
 class _RsaPublicKey {
