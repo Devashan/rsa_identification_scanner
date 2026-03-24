@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -45,7 +46,8 @@ void main() {
   group('extractScannedPayload', () {
     test('returns trimmed raw value when available', () {
       final payload = scanner.extractScannedPayload(
-        rawValue: '  DOE|JOHN|M|ZA|8001015009087|19800101|ZA|ID|20230101|DHA|1234567890|7  ',
+        rawValue:
+            '  DOE|JOHN|M|ZA|8001015009087|19800101|ZA|ID|20230101|DHA|1234567890|7  ',
       );
 
       expect(payload, 'DOE|JOHN|M|ZA|8001015009087|19800101|ZA|ID|20230101|DHA|1234567890|7');
@@ -70,9 +72,7 @@ void main() {
 
   group('isLikelyEncryptedBinaryLicenseData', () {
     test('returns true for non-UTF8 binary data with reasonable length', () {
-      final bytes = Uint8List.fromList(
-        List<int>.filled(40, 0xFF),
-      );
+      final bytes = Uint8List.fromList(List<int>.filled(40, 0xFF));
 
       expect(scanner.isLikelyEncryptedBinaryLicenseData(bytes), isTrue);
     });
@@ -116,6 +116,51 @@ void main() {
       expect(parsed.firstNames, 'JOHN');
       expect(parsed.idNumber, '8001015009087');
       expect(parsed.checkDigit, '7');
+    });
+  });
+
+  group('license decryption flow', () {
+    test('detects version 2 bytes', () {
+      final version = scanner.detectLicenseVersion(
+        Uint8List.fromList([0x01, 0x9B, 0x09, 0x45, 0x00, 0x00]),
+      );
+
+      expect(version, SaLicenseVersion.version2);
+    });
+
+    test('throws for unknown version bytes', () {
+      expect(
+        () => scanner.detectLicenseVersion(Uint8List.fromList([1, 2, 3, 4])),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('splits encrypted payload into expected 6 blocks', () {
+      final encrypted = Uint8List.fromList(List<int>.filled(714, 0));
+      final blocks = scanner.splitEncryptedBlocks(encrypted);
+
+      expect(blocks.length, 6);
+      expect(blocks.take(5).every((block) => block.length == 128), isTrue);
+      expect(blocks.last.length, 74);
+    });
+
+    test('decrypts a zeroed payload into zeroed binary output', () {
+      final licenseBytes = Uint8List.fromList([
+        0x01,
+        0x9B,
+        0x09,
+        0x45,
+        0x00,
+        0x00,
+        ...List<int>.filled(714, 0),
+      ]);
+
+      final result = scanner.decryptLicenseBytes(licenseBytes);
+
+      expect(result.version, SaLicenseVersion.version2);
+      expect(result.decryptedPayload.length, 714);
+      expect(result.decryptedPayload.every((byte) => byte == 0), isTrue);
+      expect(result.decryptedPayloadBase64, base64Encode(List<int>.filled(714, 0)));
     });
   });
 }
