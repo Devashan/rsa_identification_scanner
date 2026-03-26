@@ -2,6 +2,16 @@ name: rsa_identification_scanner
 description: "Flutter widget and helpers for scanning and parsing South African RSA ID barcode data."
 version: 0.0.2
 
+repository: https://github.com/Devashan/rsa_identification_scanner
+homepage: https://github.com/Devashan/rsa_identification_scanner#readme
+issue_tracker: https://github.com/Devashan/rsa_identification_scanner/issues
+topics:
+  - barcode
+  - rsa-id
+  - flutter
+  - scanner
+  - south-africa
+
 environment:
   sdk: ^3.10.8
   flutter: ">=1.17.0"
