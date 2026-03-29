@@ -1,4 +1,4 @@
-library rsa_identification_scanner;
+library;
 
 export 'src/models.dart';
 export 'src/rsa_identification_scanner_core.dart';

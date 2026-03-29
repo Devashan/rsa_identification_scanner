@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rsa_identification_scanner/rsa_identification_scanner.dart';
-import 'package:mobile_scanner/mobile_scanner.dart'; // Import for BarcodeFormat, etc.
+import 'package:mobile_scanner/mobile_scanner.dart'; // Import for BarcodeScanner + Format, etc.
 
 void main() {
   runApp(const MyApp());
@@ -21,6 +21,8 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'RSA ID Scanner Example',
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(title: const Text('RSA ID Scanner Example')),
         body: Column(
@@ -98,6 +100,11 @@ class _MyAppState extends State<MyApp> {
                       final rsaData = rsaScanner.parseRSAIdNewFormat(payload);
                       print('Surname: ${rsaData?.surname}');
                       print('First Names: ${rsaData?.firstNames}');
+
+                      setState(() {
+                        _scannedValue =
+                            'Scanned RSA ID (New Format)\nSurname: ${rsaData?.surname}\nFirst Names: ${rsaData?.firstNames}';
+                      });
                     }
                   }
                 },

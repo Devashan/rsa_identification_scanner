@@ -1,12 +1,11 @@
-
 name: rsa_identification_scanner_example
 description: Demonstrates how to use the rsa_identification_scanner plugin.
 
-publish_to: 'none' # Remove this line if you intend to publish this package.
+publish_to: "none" # Remove this line if you intend to publish this package.
 
 environment:
-  sdk: '>=3.10.8 <4.0.0'
-  flutter: ">=3.41.0"
+  sdk: ">=3.10.8 <4.0.0"
+  flutter: ">=1.17.0"
 
 dependencies:
   flutter:
