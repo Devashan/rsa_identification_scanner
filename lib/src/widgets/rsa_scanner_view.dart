@@ -10,7 +10,7 @@ class RsaScannerView extends StatefulWidget {
   final bool torchEnabled;
   final bool invertImage;
   final bool autoZoom;
-  final Function(BarcodeCapture) onScanResult;
+  final ValueChanged<BarcodeCapture> onScanResult;
 
   const RsaScannerView({
     super.key,
