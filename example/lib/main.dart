@@ -18,6 +18,56 @@ class _MyAppState extends State<MyApp> {
   String? _previousScannedValue = '';
   RsaIdentificationScanner rsaScanner = RsaIdentificationScanner();
 
+  String _formatNewIdRecord(NewIdFormatRecord? rsaData) {
+    if (rsaData == null) {
+      return 'Scanned RSA ID (New Format)\nUnable to parse fields.';
+    }
+
+    return 'Scanned RSA ID (New Format)\n'
+        'Surname: ${rsaData.surname}\n'
+        'First Names: ${rsaData.firstNames}\n'
+        'Gender: ${rsaData.gender}\n'
+        'Country Code: ${rsaData.countryCode}\n'
+        'ID Number: ${rsaData.idNumber}\n'
+        'Date of Birth: ${rsaData.dateOfBirth}\n'
+        'Nationality: ${rsaData.nationality}\n'
+        'ID Type: ${rsaData.idType}\n'
+        'Issue Date: ${rsaData.issueDate}\n'
+        'Issuer Code: ${rsaData.issuerCode}\n'
+        'Personal Number: ${rsaData.personalNumber}\n'
+        'Check Digit: ${rsaData.checkDigit}';
+  }
+
+  String _formatLicense(
+    SaDrivingLicense parsedLicense,
+    SaLicenseVersion version,
+  ) {
+    String joinOrNone(List<String> values) =>
+        values.isEmpty ? '(none)' : values.join(', ');
+
+    return 'Decrypted SA licence (${version.name})\n'
+        'Vehicle Codes: ${joinOrNone(parsedLicense.vehicleCodes)}\n'
+        'Surname: ${parsedLicense.surname}\n'
+        'Initials: ${parsedLicense.initials}\n'
+        'PrDP Code: ${parsedLicense.prDPCode}\n'
+        'ID Country of Issue: ${parsedLicense.idCountryOfIssue}\n'
+        'License Country of Issue: ${parsedLicense.licenseCountryOfIssue}\n'
+        'Vehicle Restrictions: ${joinOrNone(parsedLicense.vehicleRestrictions)}\n'
+        'License Number: ${parsedLicense.licenseNumber}\n'
+        'ID Number: ${parsedLicense.idNumber}\n'
+        'ID Number Type: ${parsedLicense.idNumberType}\n'
+        'License Code Issue Dates: ${joinOrNone(parsedLicense.licenseCodeIssueDates)}\n'
+        'Driver Restriction Codes: ${parsedLicense.driverRestrictionCodes}\n'
+        'PrDP Permit Expiry Date: ${parsedLicense.prDPermitExpiryDate}\n'
+        'License Issue Number: ${parsedLicense.licenseIssueNumber}\n'
+        'Birthdate: ${parsedLicense.birthdate}\n'
+        'License Issue Date: ${parsedLicense.licenseIssueDate}\n'
+        'License Expiry Date: ${parsedLicense.licenseExpiryDate}\n'
+        'Gender: ${parsedLicense.gender}\n'
+        'Image Width: ${parsedLicense.imageWidth}\n'
+        'Image Height: ${parsedLicense.imageHeight}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -74,13 +124,10 @@ class _MyAppState extends State<MyApp> {
                         );
 
                         setState(() {
-                          _scannedValue =
-                              'Decrypted SA licence (${decrypted.version.name})\n'
-                              'Name: ${parsedLicense.initials} ${parsedLicense.surname}\n'
-                              'ID: ${parsedLicense.idNumber}\n'
-                              'DOB: ${parsedLicense.birthdate}\n'
-                              'Gender: ${parsedLicense.gender}\n'
-                              'License: ${parsedLicense.licenseNumber}';
+                          _scannedValue = _formatLicense(
+                            parsedLicense,
+                            decrypted.version,
+                          );
                         });
                         return;
                       } on Object catch (error) {
@@ -102,23 +149,22 @@ class _MyAppState extends State<MyApp> {
                       print('First Names: ${rsaData?.firstNames}');
 
                       setState(() {
-                        _scannedValue =
-                            'Scanned RSA ID (New Format)\nSurname: ${rsaData?.surname}\nFirst Names: ${rsaData?.firstNames}';
+                        _scannedValue = _formatNewIdRecord(rsaData);
                       });
                     }
                   }
                 },
               ),
             ),
-            SingleChildScrollView(
-              // flex: 1,
-              child: Center(
-                child: Text(
+            Expanded(
+              flex: 3,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: SelectableText(
                   _scannedValue == null
                       ? 'Scan an RSA ID/Driving License or barcode'
-                      : 'Scanned Value: $_scannedValue',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
+                      : 'Scanned Value:\n$_scannedValue',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
             ),
