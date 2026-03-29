@@ -12,7 +12,7 @@ Add the package to your app:
 
 ```yaml
 dependencies:
-  rsa_identification_scanner: ^0.0.1
+  rsa_identification_scanner: 0.0.1
 ```
 
 Then fetch dependencies:
