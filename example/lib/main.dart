@@ -15,8 +15,8 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String? _scannedValue;
-  String? _previousScannedValue = '';
-  RsaIdentificationScanner rsaScanner = RsaIdentificationScanner();
+  String _previousScannedValue = '';
+  final RsaIdentificationScanner rsaScanner = RsaIdentificationScanner();
 
   String _formatNewIdRecord(NewIdFormatRecord? rsaData) {
     if (rsaData == null) {
