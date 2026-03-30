@@ -16,9 +16,12 @@ typedef NewIdFormatRecord = ({
   String checkDigit,
 });
 
+/// Supported versions for South African driving licence encrypted payloads.
 enum SaLicenseVersion { version1, version2 }
 
+/// RSA public key pair references used to decrypt SA licence blocks.
 class SaLicenseRsaKeySet {
+  /// Creates a key set for 128-byte and 74-byte encrypted block sizes.
   const SaLicenseRsaKeySet({
     required this.keyFor128ByteBlocksPem,
     required this.keyFor74ByteBlockPem,
@@ -28,7 +31,9 @@ class SaLicenseRsaKeySet {
   final String keyFor74ByteBlockPem;
 }
 
+/// Result produced by decrypting a South African driving licence payload.
 class SaLicenseDecryptionResult {
+  /// Creates a decryption result.
   const SaLicenseDecryptionResult({
     required this.version,
     required this.decryptedPayload,
@@ -37,10 +42,13 @@ class SaLicenseDecryptionResult {
   final SaLicenseVersion version;
   final Uint8List decryptedPayload;
 
+  /// Returns [decryptedPayload] encoded to base64 for logging or transport.
   String get decryptedPayloadBase64 => base64Encode(decryptedPayload);
 }
 
+/// Parsed South African driving licence data model.
 class SaDrivingLicense {
+  /// Creates a parsed South African driving licence record.
   const SaDrivingLicense({
     required this.vehicleCodes,
     required this.surname,

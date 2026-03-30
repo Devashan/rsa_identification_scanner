@@ -22,4 +22,5 @@ class _StubPlatformInfo implements PlatformInfo {
   bool get isLinux => false;
 }
 
+/// Returns a web-only [PlatformInfo] implementation for non-IO platforms.
 PlatformInfo getPlatformInfo() => const _StubPlatformInfo();

@@ -8,10 +8,12 @@ import 'platform/platform_info.dart';
 
 /// Scanner and parser utilities for RSA identification barcode payloads.
 class RsaIdentificationScanner {
+  /// Creates a scanner using built-in RSA key sets for known licence versions.
   RsaIdentificationScanner({PlatformInfo? platformInfo})
     : _platformInfo = platformInfo ?? getPlatformInfo(),
       _rsaKeySetsByVersion = _defaultKeySetByVersion;
 
+  /// Creates a scanner with optional custom RSA key sets.
   RsaIdentificationScanner.withLicenseKeys({
     PlatformInfo? platformInfo,
     Map<SaLicenseVersion, SaLicenseRsaKeySet>? rsaKeySetsByVersion,
@@ -32,10 +34,12 @@ class RsaIdentificationScanner {
   final PlatformInfo _platformInfo;
   final Map<SaLicenseVersion, SaLicenseRsaKeySet> _rsaKeySetsByVersion;
 
+  /// Returns whether the scanner is supported on the current platform.
   bool isSupported() {
     return _platformInfo.isAndroid || _platformInfo.isIOS || _platformInfo.isWeb;
   }
 
+  /// Returns `true` when [data] matches the expected 12-field ID format.
   bool isRSAIdNewFormat(String data) {
     if (data.trim().isEmpty) return false;
 
@@ -55,6 +59,9 @@ class RsaIdentificationScanner {
     return true;
   }
 
+  /// Parses a valid pipe-delimited RSA ID record into a typed data record.
+  ///
+  /// Returns `null` when [data] is not in the expected format.
   NewIdFormatRecord? parseRSAIdNewFormat(String data) {
     if (!isRSAIdNewFormat(data)) {
       return null;
@@ -77,6 +84,7 @@ class RsaIdentificationScanner {
     );
   }
 
+  /// Detects the SA licence version from the first four version bytes.
   SaLicenseVersion detectLicenseVersion(Uint8List data) {
     if (data.length < 4) {
       throw const FormatException('License data must include at least 4 bytes for version detection.');
@@ -95,6 +103,7 @@ class RsaIdentificationScanner {
     );
   }
 
+  /// Decodes a base64 payload into raw bytes.
   Uint8List decodeBase64Payload(String base64Payload) {
     try {
       final decoded = base64Decode(base64Payload.trim());
@@ -104,6 +113,7 @@ class RsaIdentificationScanner {
     }
   }
 
+  /// Validates and extracts encrypted bytes from a 720-byte licence payload.
   Uint8List extractEncryptedPayload(Uint8List data) {
     if (data.length != 720) {
       throw FormatException('South African license payload must be exactly 720 bytes; got ${data.length}.');
@@ -116,6 +126,7 @@ class RsaIdentificationScanner {
     return Uint8List.sublistView(data, 6);
   }
 
+  /// Splits the encrypted payload into fixed RSA block sizes (128x5, 74x1).
   List<Uint8List> splitEncryptedBlocks(Uint8List encryptedPayload) {
     if (encryptedPayload.length != 714) {
       throw FormatException('Encrypted payload must be exactly 714 bytes; got ${encryptedPayload.length}.');
@@ -133,6 +144,7 @@ class RsaIdentificationScanner {
     return blocks;
   }
 
+  /// Decrypts a raw binary SA licence payload using configured public keys.
   SaLicenseDecryptionResult decryptLicenseBytes(Uint8List data) {
     final version = detectLicenseVersion(data);
     final keySet = _rsaKeySetsByVersion[version];
@@ -162,21 +174,25 @@ class RsaIdentificationScanner {
     );
   }
 
+  /// Decodes and decrypts a base64 SA licence payload.
   SaLicenseDecryptionResult decryptLicenseBase64(String base64Payload) {
     final data = decodeBase64Payload(base64Payload);
     return decryptLicenseBytes(data);
   }
 
+  /// Decrypts and parses a raw binary SA licence payload into a model.
   SaDrivingLicense decryptAndParseLicenseBytes(Uint8List data) {
     final decrypted = decryptLicenseBytes(data);
     return parseDecryptedLicensePayload(decrypted.decryptedPayload);
   }
 
+  /// Decrypts and parses a base64 SA licence payload into a model.
   SaDrivingLicense decryptAndParseLicenseBase64(String base64Payload) {
     final decrypted = decryptLicenseBase64(base64Payload);
     return parseDecryptedLicensePayload(decrypted.decryptedPayload);
   }
 
+  /// Parses a decrypted SA licence byte stream into [SaDrivingLicense].
   SaDrivingLicense parseDecryptedLicensePayload(Uint8List decryptedPayload) {
     final markerIndex = decryptedPayload.indexOf(0x82);
     if (markerIndex < 0 || markerIndex + 1 >= decryptedPayload.length) {
@@ -286,6 +302,7 @@ class RsaIdentificationScanner {
     );
   }
 
+  /// Returns a user-friendly platform description for the current runtime.
   String getPlatform() {
     return describePlatform(_platformInfo);
   }
@@ -387,6 +404,7 @@ class RsaIdentificationScanner {
   }
 }
 
+/// Reads [length] date values from a nibble queue.
 List<String> _readNibbleDateList(List<int> nibbleQueue, int length) {
   final dateList = <String>[];
   for (var i = 0; i < length; i++) {
@@ -398,6 +416,7 @@ List<String> _readNibbleDateList(List<int> nibbleQueue, int length) {
   return dateList;
 }
 
+/// Reads one date value from a nibble queue in `MCDY/MM/DD` form.
 String _readNibbleDateString(List<int> nibbleQueue) {
   if (nibbleQueue.isEmpty) {
     throw const FormatException('Unexpected end of nibble queue while reading date.');
@@ -423,6 +442,7 @@ String _readNibbleDateString(List<int> nibbleQueue) {
   return '$m$c$d$y/$m1$m2/$d1$d2';
 }
 
+/// Reads up to [length] delimiter-terminated strings from [data].
 (List<String>, int) _readStrings(Uint8List data, int index, int length) {
   final strings = <String>[];
   var i = 0;
@@ -449,6 +469,7 @@ String _readNibbleDateString(List<int> nibbleQueue) {
   return (strings, index);
 }
 
+/// Reads one delimiter-terminated string from [data].
 (String, int, int) _readString(Uint8List data, int index) {
   final valueBuffer = StringBuffer();
   var delimiter = 0xE0;

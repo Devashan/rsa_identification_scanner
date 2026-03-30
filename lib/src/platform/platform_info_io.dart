@@ -24,4 +24,5 @@ class _IoPlatformInfo implements PlatformInfo {
   bool get isLinux => Platform.isLinux;
 }
 
+/// Returns [PlatformInfo] backed by `dart:io` platform checks.
 PlatformInfo getPlatformInfo() => const _IoPlatformInfo();

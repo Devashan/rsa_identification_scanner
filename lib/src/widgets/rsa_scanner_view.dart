@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+/// A ready-to-use scanner widget tailored for RSA barcode scanning flows.
 class RsaScannerView extends StatefulWidget {
   final List<BarcodeFormat> formats;
   final Size? cameraResolution;
@@ -12,6 +13,7 @@ class RsaScannerView extends StatefulWidget {
   final bool autoZoom;
   final ValueChanged<BarcodeCapture> onScanResult;
 
+  /// Creates an RSA scanner view.
   const RsaScannerView({
     super.key,
     this.formats = const [],
