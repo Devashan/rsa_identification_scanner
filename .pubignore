@@ -1,0 +1,31 @@
+# Exclude files that are in git but should not be included in the published package.
+
+# This resolves: "checked-in files are ignored by a .gitignore" warning from dart pub publish.
+
+# Flutter/Dart build outputs and metadata
+
+**/build/**
+**/.dart_tool/**
+**/.gradle/**
+**/.idea/**
+**/\*.iml
+**/.metadata
+\*\*/pubspec.lock
+
+# Example platform-specific artifacts (especially iOS Xcode workspace/project generated files)
+
+example/ios/**
+example/.flutter-plugins
+example/.flutter-plugins-dependencies
+example/.packages
+example/.dart_tool/**
+example/build/\*\*
+
+# Other local config
+
+**/.vscode/**
+**/android/**/local.properties
+
+# Keep source docs and package files
+
+!important.txt
