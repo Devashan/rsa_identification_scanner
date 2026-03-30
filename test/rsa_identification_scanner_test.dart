@@ -4,6 +4,35 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rsa_identification_scanner/rsa_identification_scanner.dart';
 
+class _FakePlatformInfo implements PlatformInfo {
+  const _FakePlatformInfo({
+    this.isWeb = false,
+    this.isAndroid = false,
+    this.isIOS = false,
+    this.isMacOS = false,
+    this.isWindows = false,
+    this.isLinux = false,
+  });
+
+  @override
+  final bool isWeb;
+
+  @override
+  final bool isAndroid;
+
+  @override
+  final bool isIOS;
+
+  @override
+  final bool isMacOS;
+
+  @override
+  final bool isWindows;
+
+  @override
+  final bool isLinux;
+}
+
 void main() {
   final scanner = RsaIdentificationScanner();
 
@@ -119,6 +148,116 @@ void main() {
     });
   });
 
+  group('isSupported', () {
+    test('returns true on Android, iOS, and Web', () {
+      expect(
+        RsaIdentificationScanner(
+          platformInfo: const _FakePlatformInfo(isAndroid: true),
+        ).isSupported(),
+        isTrue,
+      );
+      expect(
+        RsaIdentificationScanner(
+          platformInfo: const _FakePlatformInfo(isIOS: true),
+        ).isSupported(),
+        isTrue,
+      );
+      expect(
+        RsaIdentificationScanner(
+          platformInfo: const _FakePlatformInfo(isWeb: true),
+        ).isSupported(),
+        isTrue,
+      );
+    });
+
+    test('returns false on unsupported desktop-only platforms', () {
+      expect(
+        RsaIdentificationScanner(
+          platformInfo: const _FakePlatformInfo(isMacOS: true),
+        ).isSupported(),
+        isFalse,
+      );
+      expect(
+        RsaIdentificationScanner(
+          platformInfo: const _FakePlatformInfo(isWindows: true),
+        ).isSupported(),
+        isFalse,
+      );
+      expect(
+        RsaIdentificationScanner(
+          platformInfo: const _FakePlatformInfo(isLinux: true),
+        ).isSupported(),
+        isFalse,
+      );
+    });
+  });
+
+  group('decodeBase64Payload', () {
+    test('decodes base64 and ignores surrounding whitespace', () {
+      final decoded = scanner.decodeBase64Payload('  SGVsbG8=\n');
+
+      expect(decoded, Uint8List.fromList('Hello'.codeUnits));
+    });
+
+    test('throws FormatException with context for invalid base64', () {
+      expect(
+        () => scanner.decodeBase64Payload('not-base64!!'),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            startsWith('Invalid base64 payload:'),
+          ),
+        ),
+      );
+    });
+  });
+
+  group('extractEncryptedPayload', () {
+    test('extracts 714-byte encrypted payload after 6-byte header', () {
+      final bytes = Uint8List.fromList([
+        0x01,
+        0x9B,
+        0x09,
+        0x45,
+        0x00,
+        0x00,
+        ...List<int>.generate(714, (index) => index % 256),
+      ]);
+
+      final extracted = scanner.extractEncryptedPayload(bytes);
+
+      expect(extracted.length, 714);
+      expect(extracted.first, 0);
+      expect(extracted[1], 1);
+      expect(extracted.last, 201);
+    });
+
+    test('throws when payload is not exactly 720 bytes', () {
+      expect(
+        () => scanner.extractEncryptedPayload(Uint8List.fromList(List<int>.filled(719, 0))),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('throws when two-byte padding marker is not 0x00 0x00', () {
+      final invalidPadding = Uint8List.fromList([
+        0x01,
+        0x9B,
+        0x09,
+        0x45,
+        0x00,
+        0x01,
+        ...List<int>.filled(714, 0),
+      ]);
+
+      expect(
+        () => scanner.extractEncryptedPayload(invalidPadding),
+        throwsA(isA<FormatException>()),
+      );
+    });
+  });
+
   group('license decryption flow', () {
     test('detects version 1 bytes', () {
       final version = scanner.detectLicenseVersion(
@@ -140,6 +279,32 @@ void main() {
       expect(
         () => scanner.detectLicenseVersion(Uint8List.fromList([1, 2, 3, 4])),
         throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('throws UnsupportedError when key set for detected version is missing', () {
+      final scannerWithoutV2Keys = RsaIdentificationScanner.withLicenseKeys(
+        rsaKeySetsByVersion: const {
+          SaLicenseVersion.version1: SaLicenseRsaKeySet(
+            keyFor128ByteBlocksPem: '-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAK2fA+J9M6J7fOv5N2V8J8LByfQYQf5Y\nJp0dVb0f9u9AKeY4b7kShQ0X9vNv4P8xL2i4s7hQOkQWf3Q5qjY6k5ECAwEAAQ==\n-----END PUBLIC KEY-----',
+            keyFor74ByteBlockPem: '-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAK2fA+J9M6J7fOv5N2V8J8LByfQYQf5Y\nJp0dVb0f9u9AKeY4b7kShQ0X9vNv4P8xL2i4s7hQOkQWf3Q5qjY6k5ECAwEAAQ==\n-----END PUBLIC KEY-----',
+          ),
+        },
+      );
+
+      final version2Bytes = Uint8List.fromList([
+        0x01,
+        0x9B,
+        0x09,
+        0x45,
+        0x00,
+        0x00,
+        ...List<int>.filled(714, 0),
+      ]);
+
+      expect(
+        () => scannerWithoutV2Keys.decryptLicenseBytes(version2Bytes),
+        throwsA(isA<UnsupportedError>()),
       );
     });
 
