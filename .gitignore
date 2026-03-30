@@ -34,3 +34,11 @@ migrate_working_dir/
 /example/android/build/
 
 .vscode/
+
+# Exclude generated/example app platform folders from package upload.
+# Keep only the minimal example Dart app source for pub package consumers.
+/example/ios/
+/example/macos/
+/example/linux/
+/example/windows/
+/example/web/
