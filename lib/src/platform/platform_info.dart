@@ -12,8 +12,10 @@ abstract interface class PlatformInfo {
   bool get isLinux;
 }
 
+/// Resolves platform info using conditional imports.
 PlatformInfo getPlatformInfo() => platform_impl.getPlatformInfo();
 
+/// Returns a display label for a given [PlatformInfo] instance.
 String describePlatform(PlatformInfo platformInfo) {
   if (platformInfo.isWeb) {
     return 'Web';

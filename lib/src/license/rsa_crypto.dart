@@ -1,14 +1,18 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+/// Minimal RSA public key representation for raw modular operations.
 class RsaPublicKey {
+  /// Creates a public key from [modulus] and [exponent].
   const RsaPublicKey({required this.modulus, required this.exponent});
 
   final BigInt modulus;
   final BigInt exponent;
 
+  /// Returns modulus length in bytes.
   int get modulusByteLength => (modulus.bitLength + 7) ~/ 8;
 
+  /// Parses a PKCS#1 PEM encoded RSA public key.
   factory RsaPublicKey.fromPem(String pem) {
     final b64 = pem
         .replaceAll('-----BEGIN RSA PUBLIC KEY-----', '')
@@ -90,6 +94,7 @@ class RsaPublicKey {
   }
 }
 
+/// Performs raw RSA public operation (`m = c^e mod n`) for one block.
 Uint8List rsaRawPublicOperation(Uint8List ciphertext, RsaPublicKey key) {
   final keySize = key.modulusByteLength;
   if (ciphertext.length != keySize) {
@@ -103,6 +108,7 @@ Uint8List rsaRawPublicOperation(Uint8List ciphertext, RsaPublicKey key) {
   return bigIntToBytes(output, keySize);
 }
 
+/// Converts big-endian bytes into a [BigInt].
 BigInt bigIntFromBytes(Uint8List bytes) {
   var result = BigInt.zero;
   for (final byte in bytes) {
@@ -111,6 +117,7 @@ BigInt bigIntFromBytes(Uint8List bytes) {
   return result;
 }
 
+/// Converts [value] to a fixed-length big-endian byte array.
 Uint8List bigIntToBytes(BigInt value, int length) {
   final result = Uint8List(length);
   var current = value;

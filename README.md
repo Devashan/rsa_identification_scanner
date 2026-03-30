@@ -7,6 +7,13 @@ It provides:
 - `RsaScannerView`: a ready-to-use camera scanner widget built on `mobile_scanner`.
 - `RsaIdentificationScanner`: helper methods to detect and parse RSA ID barcode content, including encrypted/binary South African driving licence payload handling.
 
+## Package metadata
+
+- **Current version:** `1.0.0`
+- **Dart SDK:** `^3.10.8`
+- **Flutter:** `>=1.17.0`
+- **Main dependencies:** `mobile_scanner`
+
 ## Installation
 
 Add the package to your app:
@@ -182,3 +189,43 @@ final scanner = RsaIdentificationScanner.withLicenseKeys(
 - `parseRSAIdNewFormat` does not verify check digits or cryptographic authenticity; it only maps fields by index.
 - `RsaIdentificationScanner.isSupported()` returns support for Android, iOS, and web, but camera behavior depends on platform/browser/device capabilities.
 - Duplicate barcode filtering and scan throttling are app-level concerns and should be handled in your `onScanResult` callback.
+
+## Public API reference
+
+### Core scanner (`RsaIdentificationScanner`)
+
+- `isSupported()`
+- `isRSAIdNewFormat(String data)`
+- `parseRSAIdNewFormat(String data)`
+- `extractScannedPayload({String? rawValue, Uint8List? rawBytes, bool preferRawValue = true})`
+- `isLikelyEncryptedBinaryLicenseData(Uint8List rawBytes)`
+- `detectLicenseVersion(Uint8List data)`
+- `decodeBase64Payload(String base64Payload)`
+- `extractEncryptedPayload(Uint8List data)`
+- `splitEncryptedBlocks(Uint8List encryptedPayload)`
+- `decryptLicenseBytes(Uint8List data)`
+- `decryptLicenseBase64(String base64Payload)`
+- `decryptAndParseLicenseBytes(Uint8List data)`
+- `decryptAndParseLicenseBase64(String base64Payload)`
+- `parseDecryptedLicensePayload(Uint8List decryptedPayload)`
+- `getPlatform()`
+
+### Scanner widget (`RsaScannerView`)
+
+- `RsaScannerView(...)`
+  - Key parameters include `formats`, `cameraResolution`, `detectionSpeed`, `detectionTimeoutMs`, `returnImage`, `torchEnabled`, `invertImage`, `autoZoom`, and required `onScanResult`.
+
+### Data models
+
+- `SaLicenseVersion`
+- `SaLicenseRsaKeySet`
+- `SaLicenseDecryptionResult`
+- `SaDrivingLicense`
+- `NewIdFormatRecord`
+
+### Cryptography helpers
+
+- `RsaPublicKey.fromPem(String pem)`
+- `rsaRawPublicOperation(Uint8List ciphertext, RsaPublicKey key)`
+- `bigIntFromBytes(Uint8List bytes)`
+- `bigIntToBytes(BigInt value, int length)`
