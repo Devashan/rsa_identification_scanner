@@ -3,6 +3,7 @@
 `rsa_identification_scanner` is a Flutter package for scanning South African RSA ID barcode payloads and parsing the new pipe-delimited format into a typed record.
 
 It provides:
+
 - `RsaScannerView`: a ready-to-use camera scanner widget built on `mobile_scanner`.
 - `RsaIdentificationScanner`: helper methods to detect and parse RSA ID barcode content, including encrypted/binary South African driving licence payload handling.
 
@@ -12,7 +13,7 @@ Add the package to your app:
 
 ```yaml
 dependencies:
-  rsa_identification_scanner: 0.0.1
+  rsa_identification_scanner: ^1.0.0
 ```
 
 Then fetch dependencies:
@@ -81,7 +82,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
 }
 ```
 
-
 ## Handling encrypted binary SA driving licence payloads
 
 Some scanners return South African driving licence PDF417 data as encrypted binary bytes where `rawValue` is empty or unreadable. Use `extractScannedPayload` to normalize either text or bytes:
@@ -129,7 +129,6 @@ if (parsed != null) {
 }
 ```
 
-
 ## Decrypting South African driving licence payloads (binary PDF417)
 
 For 720-byte encrypted licence payloads (or base64-encoded equivalents), you can now run the full decode flow:
@@ -149,6 +148,7 @@ print(result.decryptedPayloadBase64); // Useful for debugging/fixtures
 ```
 
 What is validated:
+
 - Total input length is exactly 720 bytes.
 - The 2-byte marker after version is `00 00`.
 - Encrypted payload is split into fixed blocks: 128x5 and 74x1.

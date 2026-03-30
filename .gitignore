@@ -32,3 +32,5 @@ migrate_working_dir/
 
 # Android example generated outputs
 /example/android/build/
+
+.vscode/
